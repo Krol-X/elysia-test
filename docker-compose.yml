@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      target: production
+    container_name: stream-backend
+    restart: unless-stopped
+    
+    # Сеть
+    ports:
+      - "3000:3000"
+    
+    # Данные (SQLite + логи)
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      # Конфиг (можно маунтить из S3 при деплое)
+      - ./config.yaml:/app/config.yaml:ro
+    
+    # Ресурсы (защита от утечек)
+    deploy:
+      resources:
+        limits:
+          memory: 400M
+          cpus: '0.75'
+    
+    # Переменные
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/app.db
+      - LOG_LEVEL=info
+      # Добавь свои:
+      # - JWT_SECRET=your_secret_here
+    
+    # Health check (дублируем из Dockerfile для надёжности)
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Опционально: Caddy как reverse proxy + HTTPS
+#  caddy:
+#    image: caddy:2-alpine
+#    container_name: stream-proxy
+#    restart: unless-stopped
+#    ports:
+#      - "80:80"
+#      - "443:443"
+#    volumes:
+#      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+#      - caddy_data:/data
+#      - caddy_config:/config
+#    depends_on:
+#      api:
+#        condition: service_healthy
+
+#volumes:
+#  caddy_data:
+#  caddy_config:
