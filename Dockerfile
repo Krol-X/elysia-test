@@ -30,7 +30,6 @@ WORKDIR /app
 
 # Копируем только скомпилированный бинарник + минимальные файлы
 COPY --from=builder --chown=bun-user:nodejs /app/stream-api ./
-COPY --from=builder --chown=bun-user:nodejs /app/config.example.yaml ./config.yaml
 
 # Создаём папку для данных (SQLite, логи)
 RUN mkdir -p /app/data /app/logs && \
